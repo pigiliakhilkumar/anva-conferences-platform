@@ -95,8 +95,11 @@ enum SubmissionState {
 enum SubmissionStatus {
   DRAFT
   SUBMITTED
+  TECHNICAL_CHECK
+  RETURNED_FOR_CORRECTION
   UNDER_REVIEW
   REVISION_REQUESTED
+  REVISED
   ACCEPTED
   REJECTED
   WITHDRAWN
@@ -107,6 +110,20 @@ enum SubmissionKind {
   FULL_PAPER
   POSTER
   WORKSHOP_PROPOSAL
+  OTHER
+}
+
+enum TechnicalCheckStatus {
+  PENDING
+  PASSED
+  RETURNED
+}
+
+enum PresentationClassification {
+  NOT_CLASSIFIED
+  ORAL
+  POSTER
+  OTHER
 }
 
 enum ReviewAssignmentStatus {
@@ -114,6 +131,7 @@ enum ReviewAssignmentStatus {
   ACCEPTED
   DECLINED
   COMPLETED
+  CANCELLED
 }
 
 enum ReviewRecommendation {
@@ -125,24 +143,51 @@ enum ReviewRecommendation {
 
 enum DecisionType {
   ACCEPT
+  MINOR_REVISION
+  MAJOR_REVISION
   REVISION_REQUIRED
   REJECT
 }
 
+enum NotificationType {
+  SUBMISSION_RECEIVED
+  TECHNICAL_CHECK_RETURNED
+  REVIEWER_INVITED
+  REVIEWER_RESPONDED
+  REVIEW_SUBMITTED
+  REVISION_REQUESTED
+  DECISION_ISSUED
+}
+
 model User {
-  id                String               @id @default(cuid())
-  email             String               @unique
-  name              String?
-  passwordHash      String
-  role              Role                 @default(PARTICIPANT)
-  active            Boolean              @default(true)
-  sessions          Session[]
-  auditEvents       AuditEvent[]
-  submissions       Submission[]         @relation("SubmissionOwner")
-  reviewAssignments ReviewAssignment[]   @relation("AssignedReviewer")
-  decisions         SubmissionDecision[] @relation("DecisionMaker")
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  id                   String                    @id @default(cuid())
+  email                String                    @unique
+  name                 String?
+  passwordHash         String
+  role                 Role                      @default(PARTICIPANT)
+  active               Boolean                   @default(true)
+  sessions             Session[]
+  auditEvents          AuditEvent[]
+  submissions          Submission[]              @relation("SubmissionOwner")
+  reviewAssignments    ReviewAssignment[]        @relation("AssignedReviewer")
+  decisions            SubmissionDecision[]      @relation("DecisionMaker")
+  technicalChecks      Submission[]              @relation("TechnicalChecker")
+  notifications        Notification[]
+  statusHistoryChanges SubmissionStatusHistory[]
+  affiliation          String?
+  department           String?
+  designation          String?
+  country              String?
+  orcid                String?
+  phone                String?
+  addressLine1         String?
+  addressLine2         String?
+  city                 String?
+  region               String?
+  postalCode           String?
+  reviewerExpertise    String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
 }
 
 model Session {
@@ -215,6 +260,7 @@ model Conference {
   faqs                    ConferenceFaq[]
   announcements           ConferenceAnnouncement[]
   submissions             Submission[]
+  submissionSequence      SubmissionSequence?
   proceedings             Proceeding[]
   media                   MediaAsset[]              @relation("ConferenceMedia")
   logo                    MediaAsset?               @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
@@ -426,38 +472,70 @@ model MediaAsset {
 }
 
 model Submission {
-  id           String               @id @default(cuid())
-  conferenceId String
-  ownerId      String
-  title        String
-  abstractText String               @db.Text
-  keywords     String?
-  kind         SubmissionKind
-  trackId      String?
-  status       SubmissionStatus     @default(DRAFT)
-  submittedAt  DateTime?
-  withdrawnAt  DateTime?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  conference   Conference           @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
-  owner        User                 @relation("SubmissionOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  track        ConferenceTrack?     @relation(fields: [trackId], references: [id], onDelete: SetNull)
-  authors      SubmissionAuthor[]
-  versions     SubmissionVersion[]
-  assignments  ReviewAssignment[]
-  decisions    SubmissionDecision[]
+  id                         String                     @id @default(cuid())
+  referenceNumber            String                     @unique
+  conferenceId               String
+  ownerId                    String
+  title                      String
+  abstractText               String                     @db.Text
+  keywords                   String?
+  kind                       SubmissionKind
+  trackId                    String?
+  status                     SubmissionStatus           @default(DRAFT)
+  technicalStatus            TechnicalCheckStatus       @default(PENDING)
+  technicalNotes             String?                    @db.Text
+  technicalCheckedAt         DateTime?
+  technicalCheckedById       String?
+  presentationClassification PresentationClassification @default(NOT_CLASSIFIED)
+  presentationNotes          String?                    @db.Text
+  submittedAt                DateTime?
+  withdrawnAt                DateTime?
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  conference                 Conference                 @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  owner                      User                       @relation("SubmissionOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  technicalCheckedBy         User?                      @relation("TechnicalChecker", fields: [technicalCheckedById], references: [id], onDelete: SetNull)
+  track                      ConferenceTrack?           @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  authors                    SubmissionAuthor[]
+  versions                   SubmissionVersion[]
+  assignments                ReviewAssignment[]
+  decisions                  SubmissionDecision[]
+  history                    SubmissionStatusHistory[]
 
   @@index([ownerId, updatedAt])
   @@index([conferenceId, status])
+}
+
+model SubmissionSequence {
+  conferenceId String     @id
+  nextValue    Int        @default(1)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+}
+
+model SubmissionStatusHistory {
+  id           String            @id @default(cuid())
+  submissionId String
+  fromStatus   SubmissionStatus?
+  toStatus     SubmissionStatus
+  note         String?           @db.Text
+  changedById  String?
+  createdAt    DateTime          @default(now())
+  submission   Submission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  changedBy    User?             @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([submissionId, createdAt])
 }
 
 model SubmissionAuthor {
   id            String     @id @default(cuid())
   submissionId  String
   name          String
+  givenName     String?
+  familyName    String?
   email         String
   affiliation   String?
   country       String?
+  orcid         String?
   corresponding Boolean    @default(false)
   sortOrder     Int        @default(0)
   submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
@@ -470,6 +548,8 @@ model SubmissionVersion {
   submissionId        String
   versionNumber       Int
   mediaId             String?
+  integrityHash       String?
+  revisionRound       Int         @default(0)
   responseToReviewers String?     @db.Text
   submittedAt         DateTime    @default(now())
   submission          Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
@@ -487,6 +567,7 @@ model ReviewAssignment {
   conflictReason String?                @db.Text
   invitedAt      DateTime               @default(now())
   respondedAt    DateTime?
+  completedAt    DateTime?
   submission     Submission             @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   reviewer       User                   @relation("AssignedReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
   review         Review?
@@ -507,16 +588,30 @@ model Review {
 }
 
 model SubmissionDecision {
-  id           String       @id @default(cuid())
-  submissionId String
-  decidedById  String
-  type         DecisionType
-  comments     String       @db.Text
-  createdAt    DateTime     @default(now())
-  submission   Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  decidedBy    User         @relation("DecisionMaker", fields: [decidedById], references: [id], onDelete: Restrict)
+  id            String       @id @default(cuid())
+  submissionId  String
+  decidedById   String
+  type          DecisionType
+  comments      String       @db.Text
+  revisionRound Int          @default(0)
+  createdAt     DateTime     @default(now())
+  submission    Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  decidedBy     User         @relation("DecisionMaker", fields: [decidedById], references: [id], onDelete: Restrict)
 
   @@index([submissionId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
 }
 
 model ConferenceDocument {

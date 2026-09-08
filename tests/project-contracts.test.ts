@@ -55,6 +55,9 @@ describe("database provider contracts", () => {
     "ReviewAssignmentStatus",
     "ReviewRecommendation",
     "DecisionType",
+    "TechnicalCheckStatus",
+    "PresentationClassification",
+    "NotificationType",
   ])("keeps the %s enum identical across providers", (enumName) => {
     expect(enumValues(mysql, enumName)).toEqual(enumValues(sqlite, enumName));
   });
@@ -82,6 +85,9 @@ describe("database provider contracts", () => {
     "ReviewAssignment",
     "Review",
     "SubmissionDecision",
+    "SubmissionSequence",
+    "SubmissionStatusHistory",
+    "Notification",
     "ConferenceDocument",
     "ConferenceFaq",
     "ConferenceAnnouncement",

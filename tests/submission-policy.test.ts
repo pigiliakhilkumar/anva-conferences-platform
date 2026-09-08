@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canEditSubmission, conferenceAcceptsKind, statusForDecision } from "@/lib/submission-policy";
+import { canEditSubmission, canTransition, conferenceAcceptsKind, statusForDecision } from "@/lib/submission-policy";
 
 describe("submission lifecycle policy", () => {
   it("only permits author editing for drafts and requested revisions", () => {
@@ -19,5 +19,11 @@ describe("submission lifecycle policy", () => {
     expect(conferenceAcceptsKind(conference, "FULL_PAPER")).toBe(false);
     expect(conferenceAcceptsKind(conference, "POSTER")).toBe(true);
     expect(conferenceAcceptsKind(conference, "WORKSHOP_PROPOSAL")).toBe(false);
+  });
+  it("prevents invalid lifecycle jumps", () => {
+    expect(canTransition("DRAFT", "SUBMITTED")).toBe(true);
+    expect(canTransition("SUBMITTED", "ACCEPTED")).toBe(false);
+    expect(canTransition("TECHNICAL_CHECK", "RETURNED_FOR_CORRECTION")).toBe(true);
+    expect(canTransition("ACCEPTED", "DRAFT")).toBe(false);
   });
 });

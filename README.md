@@ -6,7 +6,7 @@ Public identity: **ANVA Conferences — Academic & Scientific Conferences**, a s
 
 ## Phase 2 scope
 
-Phase 2 adds secure participant registration and shared account login, role-aware author and reviewer workspaces, conference-scoped submissions, ordered co-authors, protected PDF manuscript versions, reviewer invitations and conflict declarations, author-visible and confidential review comments, editorial decisions, and revision resubmission. Administrators can promote verified accounts to reviewer or conference manager and deactivate access. Mutations enforce ownership and roles server-side and emit audit events.
+Phase 2 adds secure participant registration and shared account login, editable participant/reviewer profiles, role-aware author and reviewer workspaces, conference-scoped submissions with human references, ordered co-authors, protected PDF manuscript versions with SHA-256 integrity hashes, technical screening, reviewer invitations and conflict declarations, author-visible and confidential review comments, editorial decisions, revision rounds, presentation classification, internal notifications, and controlled withdrawal. Administrators can promote verified accounts to reviewer or conference manager and deactivate access. Mutations enforce ownership and roles server-side and emit audit events and status history records.
 
 The end-to-end workflow is:
 
