@@ -51,7 +51,7 @@ export const submissionSchema = z.object({
   kind: z.enum(["ABSTRACT", "FULL_PAPER", "POSTER", "WORKSHOP_PROPOSAL", "OTHER"]), trackId: z.string().cuid().optional().or(z.literal("")),
 });
 export const authorSchema = z.object({ name: z.string().trim().min(2).max(150), givenName: z.string().trim().max(100).optional().or(z.literal("")), familyName: z.string().trim().max(100).optional().or(z.literal("")), email: z.string().trim().toLowerCase().email().max(254), affiliation: z.string().trim().max(250).optional().or(z.literal("")), country: z.string().trim().max(100).optional().or(z.literal("")), orcid: z.string().trim().max(40).optional().or(z.literal("")), corresponding: z.preprocess(v => v === "on" || v === true, z.boolean()) });
-export const reviewSchema = z.object({ recommendation: z.enum(["ACCEPT", "MINOR_REVISION", "MAJOR_REVISION", "REJECT"]), authorComments: z.string().trim().min(20).max(10000), confidentialComments: z.string().trim().max(10000).optional().or(z.literal("")) });
+export const reviewSchema = z.object({ recommendation: z.enum(["ACCEPT", "MINOR_REVISION", "MAJOR_REVISION", "REJECT"]), score: z.coerce.number().int().min(1).max(5).optional().or(z.literal("")), authorComments: z.string().trim().min(20).max(10000), confidentialComments: z.string().trim().max(10000).optional().or(z.literal("")) });
 export const decisionSchema = z.object({ type: z.enum(["ACCEPT", "MINOR_REVISION", "MAJOR_REVISION", "REVISION_REQUIRED", "REJECT"]), comments: z.string().trim().min(10).max(10000) });
 export const subscriberSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) });
 export const importantDateSchema = z.object({

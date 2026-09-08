@@ -580,6 +580,7 @@ model Review {
   id                   String               @id @default(cuid())
   assignmentId         String               @unique
   recommendation       ReviewRecommendation
+  score                Int?
   authorComments       String               @db.Text
   confidentialComments String?              @db.Text
   submittedAt          DateTime             @default(now())
