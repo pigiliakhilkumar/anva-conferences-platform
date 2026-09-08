@@ -1,0 +1,3 @@
+import { APP_URL, CONTACT_EMAIL, EDITORIAL_EMAIL } from "@/lib/constants";
+export default function SettingsPage() { return <><header className="admin-header"><div><p className="eyebrow">Platform</p><h1>Settings</h1></div></header><section className="admin-panel"><h2>Configured identity</h2><dl><dt>Canonical URL</dt><dd>{APP_URL}</dd><dt>General contact</dt><dd>{CONTACT_EMAIL}</dd><dt>Scientific correspondence</dt><dd>{EDITORIAL_EMAIL}</dd><dt>Storage driver</dt><dd>{process.env.STORAGE_DRIVER || "local"}</dd></dl><p>Secrets and production storage paths are managed through environment variables and are never displayed here.</p></section></>;
+}

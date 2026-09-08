@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+dev.db
+dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+storage/uploads/
+coverage/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

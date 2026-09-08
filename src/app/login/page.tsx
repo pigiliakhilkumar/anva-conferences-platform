@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { PageHeader, publicStyles as styles } from "@/components/public/PublicUI";
+export const metadata = { title: "Login" };
+export default function LoginPage() { return <><PageHeader eyebrow="Account access" title="Register / Login">Administrator access is available in Phase 1. Participant accounts and registration workflows will be introduced in a later phase.</PageHeader><div className={`${styles.narrow} ${styles.content}`}><section className={styles.card}><h2>Administrator</h2><p>Authorized conference administrators can securely access the management workspace.</p><Link className={styles.button} href="/admin/login">Administrator login</Link></section><section><h2>Participant access</h2><p className={styles.notice}>Participant registration and login are not currently available. You can browse all public conference information without an account.</p></section></div></>; }

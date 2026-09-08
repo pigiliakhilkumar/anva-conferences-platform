@@ -1,0 +1,73 @@
+.body { margin: 0; background: #fbfcfe; }
+.body *:focus-visible { outline: 3px solid #e49c2c; outline-offset: 3px; }
+
+.shell {
+  min-height: 100vh;
+  color: #17233c;
+  background: #fbfcfe;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.skip {
+  position: fixed;
+  z-index: 100;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: white;
+  background: #173c70;
+  border-radius: 0.5rem;
+  transform: translateY(-150%);
+}
+
+.skip:focus { transform: translateY(0); }
+
+.header {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  border-bottom: 1px solid #dfe6ef;
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.headerInner, .footerInner, .container {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.headerInner {
+  display: flex;
+  min-height: 4.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand { color: #102e5d; text-decoration: none; line-height: 1.1; }
+.brand strong { display: block; font-family: Georgia, serif; font-size: 1.28rem; }
+.brand span { color: #60708a; font-size: 0.73rem; letter-spacing: 0.05em; }
+
+.nav { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; flex-wrap: wrap; }
+.nav a { color: #32435d; font-size: 0.91rem; font-weight: 600; text-decoration: none; }
+.nav a:hover { color: #0b6592; }
+.nav .login { padding: 0.65rem 0.9rem; color: white; background: #173c70; border-radius: 0.45rem; }
+
+.main { min-height: 65vh; }
+.footer { margin-top: 5rem; color: #dfe8f4; background: #102641; }
+.footerInner { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 3rem; padding-block: 3.5rem 2rem; }
+.footer h2, .footer h3 { color: white; font-family: Georgia, serif; }
+.footer p { line-height: 1.7; }
+.footer a { display: block; margin: 0.55rem 0; color: #dfe8f4; text-decoration: none; }
+.legal { grid-column: 1 / -1; padding-top: 1.5rem; border-top: 1px solid #35506d; font-size: 0.85rem; }
+
+@media (max-width: 900px) {
+  .header { position: static; }
+  .headerInner { align-items: flex-start; flex-direction: column; padding-block: 1rem; }
+  .nav { justify-content: flex-start; gap: 0.8rem 1rem; }
+  .footerInner { grid-template-columns: 1fr; gap: 1.5rem; }
+  .legal { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip { transition: none; }
+}

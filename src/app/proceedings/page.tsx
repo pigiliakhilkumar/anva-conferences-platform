@@ -1,0 +1,3 @@
+import { EmptyState, PageHeader, publicStyles as styles } from "@/components/public/PublicUI";
+export const metadata = { title: "Conference Proceedings", description: "Proceedings and conference archive information from ANVA Conferences." };
+export default function ProceedingsPage() { return <><PageHeader eyebrow="Scholarly record" title="Conference proceedings">A future home for proceedings and published conference outputs made available through ANVA Conferences.</PageHeader><section className={styles.section}><div className={styles.container}><EmptyState title="No proceedings are currently available">Proceedings will appear here only after they have been formally added and published.</EmptyState></div></section></>; }
