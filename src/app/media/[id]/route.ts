@@ -10,14 +10,16 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   const asset = await db.mediaAsset.findUnique({
     where: { id },
-    select: { id: true, objectKey: true, originalName: true, mimeType: true, kind: true, conferenceId: true },
+    select: { id: true, objectKey: true, originalName: true, mimeType: true, kind: true, conferenceId: true, submissionVersions: { select: { submission: { select: { ownerId: true, assignments: { select: { reviewerId: true } } } } } } },
   });
   if (!asset) return new Response("Not found", { status: 404 });
 
   const user = await getCurrentUser();
-  const isAdmin = user?.active && user.role === "ADMINISTRATOR";
+  const isAdmin = user?.active && ["ADMINISTRATOR", "CONFERENCE_MANAGER"].includes(user.role);
+  const isSubmissionFile = asset.submissionVersions.length > 0;
+  const canReadSubmission = Boolean(user && asset.submissionVersions.some(version => version.submission.ownerId === user.id || version.submission.assignments.some(assignment => assignment.reviewerId === user.id)));
   let isPublic = false;
-  if (asset.conferenceId) {
+  if (asset.conferenceId && !isSubmissionFile) {
     isPublic = Boolean(await db.conference.findFirst({ where: {
       id: asset.conferenceId,
       status: { in: ["PUBLISHED", "ONGOING", "COMPLETED"] },
@@ -31,7 +33,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       publishedAt: { lte: new Date() },
     }, select: { id: true } }));
   }
-  if (!isAdmin && !isPublic) return new Response("Not found", { status: 404 });
+  if (!isAdmin && !canReadSubmission && !isPublic) return new Response("Not found", { status: 404 });
 
   try {
     const bytes = await readStoredMedia(asset.objectKey);
@@ -40,7 +42,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       "Content-Type": asset.mimeType,
       "Content-Length": String(bytes.byteLength),
       "Content-Disposition": `${asset.kind === "DOCUMENT" ? "attachment" : "inline"}; filename="${safeName}"`,
-      "Cache-Control": isPublic ? "public, max-age=3600, stale-while-revalidate=86400" : "private, no-store",
+      "Cache-Control": isPublic && !isSubmissionFile ? "public, max-age=3600, stale-while-revalidate=86400" : "private, no-store",
       "X-Content-Type-Options": "nosniff",
     } });
   } catch (error) {

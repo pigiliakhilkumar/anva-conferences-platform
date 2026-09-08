@@ -4,13 +4,27 @@ ANVA Conferences is a database-driven, multi-conference publishing platform for 
 
 Public identity: **ANVA Conferences — Academic & Scientific Conferences**, a scholarly events initiative of ANVA Publishing.
 
-## Phase 1 scope
+## Phase 2 scope
+
+Phase 2 adds secure participant registration and shared account login, role-aware author and reviewer workspaces, conference-scoped submissions, ordered co-authors, protected PDF manuscript versions, reviewer invitations and conflict declarations, author-visible and confidential review comments, editorial decisions, and revision resubmission. Administrators can promote verified accounts to reviewer or conference manager and deactivate access. Mutations enforce ownership and roles server-side and emit audit events.
+
+The end-to-end workflow is:
+
+1. An administrator publishes a conference, enables accepted submission types, and opens submissions.
+2. A participant creates an account and a draft, adds authors and—except for abstract-only work—uploads a validated PDF.
+3. The author submits the draft. A conference manager assigns active reviewer accounts; authors and co-authors cannot be assigned to their own paper.
+4. A reviewer accepts or declines with a conflict reason, then submits a recommendation, author comments, and optional confidential editor comments.
+5. A manager records an acceptance, rejection, or revision request. Author-visible feedback and the decision appear in the submission workspace.
+6. For a revision request, the author uploads a new immutable version with a response to reviewers and resubmits it.
+
+Submission files never inherit a conference's public visibility. Downloads require the owning author, an assigned reviewer, a conference manager, or an administrator.
+
+## Phase 1 foundation
 
 Phase 1 supplies the public platform, configurable conference microsites, administrator authentication and conference management, local media storage, news/blog publishing, newsletter subscriptions, and a truthful proceedings foundation. The production-facing database starts empty. There are no seeded conferences, people, sponsors, posts, proceedings, statistics, or testimonials.
 
-The following workflows are deliberately deferred:
+The following workflows remain deferred:
 
-- Phase 2: participant accounts, author and reviewer workspaces, submissions, peer review, decisions, and revisions.
 - Phase 3: registrations, payments, invoices, attendance operations, expanded programme management, badges, and QR check-in.
 - Phase 4: certificates, certificate verification, proceedings publication workflow, final production hardening, and launch audit.
 
@@ -156,7 +170,7 @@ npm run db:generate:mysql
 
 Generating from the MySQL schema replaces the generated client metadata. Run `npm run db:generate` again before continuing local SQLite development.
 
-Core Phase 1 models cover users and sessions; conferences, categories, section configuration, important dates and tracks; committee groups and members; speakers and organizers; registration fee content and programme items; sponsors, media and documents; conference FAQs and announcements; blog posts; subscribers; and audit events.
+Core models cover users and sessions; conferences and public content; submissions, authors and manuscript versions; reviewer assignments and reviews; editorial decisions; media; subscribers; and audit events.
 
 ## Hostinger deployment notes
 

@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { requireReviewer } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { formatDate } from "@/lib/text";
+export default async function ReviewsPage() { const user = await requireReviewer(); const assignments = await db.reviewAssignment.findMany({ where: { reviewerId: user.id }, include: { submission: { include: { conference: { select: { title: true } } } } }, orderBy: { invitedAt: "desc" } }); return <><header className="admin-header"><div><p className="eyebrow">Peer review</p><h1>My assignments</h1></div></header><section className="admin-panel">{assignments.length ? <div className="responsive-table"><table><thead><tr><th>Submission</th><th>Conference</th><th>Status</th><th>Due</th></tr></thead><tbody>{assignments.map(a => <tr key={a.id}><td><Link href={`/workspace/reviews/${a.id}`}>{a.submission.title}</Link></td><td>{a.submission.conference.title}</td><td>{a.status}</td><td>{a.dueAt ? formatDate(a.dueAt) : "Not set"}</td></tr>)}</tbody></table></div> : <div className="empty-state"><h2>No review assignments</h2><p>Invitations assigned to your reviewer account will appear here.</p></div>}</section></>; }

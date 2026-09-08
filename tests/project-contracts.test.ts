@@ -34,8 +34,8 @@ describe("database provider contracts", () => {
   it("keeps development on SQLite and production on MySQL", () => {
     expect(sqlite).toMatch(/datasource\s+db\s*\{[^}]*provider\s*=\s*"sqlite"/s);
     expect(mysql).toMatch(/datasource\s+db\s*\{[^}]*provider\s*=\s*"mysql"/s);
-    expect(sqlite).toContain('url = env("DATABASE_URL")');
-    expect(mysql).toContain('url = env("DATABASE_URL")');
+    expect(sqlite).toMatch(/url\s*=\s*env\("DATABASE_URL"\)/);
+    expect(mysql).toMatch(/url\s*=\s*env\("DATABASE_URL"\)/);
   });
 
   it.each([
@@ -50,6 +50,11 @@ describe("database provider contracts", () => {
     "OrganizerType",
     "MediaKind",
     "SubmissionState",
+    "SubmissionStatus",
+    "SubmissionKind",
+    "ReviewAssignmentStatus",
+    "ReviewRecommendation",
+    "DecisionType",
   ])("keeps the %s enum identical across providers", (enumName) => {
     expect(enumValues(mysql, enumName)).toEqual(enumValues(sqlite, enumName));
   });
@@ -71,6 +76,12 @@ describe("database provider contracts", () => {
     "ConferenceProgrammeItem",
     "Sponsor",
     "MediaAsset",
+    "Submission",
+    "SubmissionAuthor",
+    "SubmissionVersion",
+    "ReviewAssignment",
+    "Review",
+    "SubmissionDecision",
     "ConferenceDocument",
     "ConferenceFaq",
     "ConferenceAnnouncement",
@@ -100,9 +111,16 @@ describe("database provider contracts", () => {
 
   it("models ordered dates, sections, speakers, and committee membership", () => {
     expect(modelBody(sqlite, "ImportantDate")).toContain("@@index([conferenceId, date])");
-    expect(modelBody(sqlite, "ConferenceSection")).toContain("sortOrder Int @default(0)");
-    expect(modelBody(sqlite, "Speaker")).toContain("conference Conference @relation");
-    expect(modelBody(sqlite, "CommitteeMember")).toContain("committee Committee @relation");
+    expect(modelBody(sqlite, "ConferenceSection")).toMatch(/sortOrder\s+Int\s+@default\(0\)/);
+    expect(modelBody(sqlite, "Speaker")).toMatch(/conference\s+Conference\s+@relation/);
+    expect(modelBody(sqlite, "CommitteeMember")).toMatch(/committee\s+Committee\s+@relation/);
+  });
+
+  it("models versioned submissions, independent reviews, and durable decisions", () => {
+    expect(modelBody(sqlite, "SubmissionVersion")).toContain("@@unique([submissionId, versionNumber])");
+    expect(modelBody(sqlite, "ReviewAssignment")).toContain("@@unique([submissionId, reviewerId])");
+    expect(modelBody(sqlite, "Review")).toMatch(/confidentialComments\s+String\?/);
+    expect(modelBody(sqlite, "SubmissionDecision")).toMatch(/decidedBy\s+User\s+@relation/);
   });
 });
 

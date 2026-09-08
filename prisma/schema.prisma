@@ -1,9 +1,10 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "sqlite"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -12,6 +13,7 @@ enum Role {
   REVIEWER
   PARTICIPANT
 }
+
 enum ConferenceStatus {
   DRAFT
   PUBLISHED
@@ -20,10 +22,12 @@ enum ConferenceStatus {
   ARCHIVED
   CANCELLED
 }
+
 enum GeographicScope {
   INTERNATIONAL
   NATIONAL
 }
+
 enum EventType {
   CONFERENCE
   CONGRESS
@@ -34,16 +38,19 @@ enum EventType {
   COLLOQUIUM
   OTHER
 }
+
 enum DeliveryMode {
   PHYSICAL
   VIRTUAL
   HYBRID
 }
+
 enum ContentStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
 }
+
 enum DateType {
   ABSTRACT_OPENS
   ABSTRACT_DEADLINE
@@ -56,6 +63,7 @@ enum DateType {
   CONFERENCE_END
   CUSTOM
 }
+
 enum SpeakerType {
   KEYNOTE
   INVITED
@@ -63,6 +71,7 @@ enum SpeakerType {
   GUEST
   OTHER
 }
+
 enum OrganizerType {
   PRIMARY_ORGANIZER
   CO_ORGANIZER
@@ -71,357 +80,535 @@ enum OrganizerType {
   SUPPORTING_ORGANIZATION
   OTHER
 }
+
 enum MediaKind {
   IMAGE
   DOCUMENT
 }
+
 enum SubmissionState {
   OPEN
   CLOSED
   UPCOMING
 }
 
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  REVISION_REQUESTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum SubmissionKind {
+  ABSTRACT
+  FULL_PAPER
+  POSTER
+  WORKSHOP_PROPOSAL
+}
+
+enum ReviewAssignmentStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  COMPLETED
+}
+
+enum ReviewRecommendation {
+  ACCEPT
+  MINOR_REVISION
+  MAJOR_REVISION
+  REJECT
+}
+
+enum DecisionType {
+  ACCEPT
+  REVISION_REQUIRED
+  REJECT
+}
+
 model User {
-  id String @id @default(cuid())
-  email String @unique
-  name String?
-  passwordHash String
-  role Role @default(PARTICIPANT)
-  active Boolean @default(true)
-  sessions Session[]
-  auditEvents AuditEvent[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String               @id @default(cuid())
+  email             String               @unique
+  name              String?
+  passwordHash      String
+  role              Role                 @default(PARTICIPANT)
+  active            Boolean              @default(true)
+  sessions          Session[]
+  auditEvents       AuditEvent[]
+  submissions       Submission[]         @relation("SubmissionOwner")
+  reviewAssignments ReviewAssignment[]   @relation("AssignedReviewer")
+  decisions         SubmissionDecision[] @relation("DecisionMaker")
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 }
 
 model Session {
-  id String @id @default(cuid())
-  tokenHash String @unique
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
   @@index([userId, expiresAt])
 }
 
 model Conference {
-  id String @id @default(cuid())
-  title String
-  acronym String?
-  slug String @unique
-  shortDescription String
-  about String?
-  theme String?
-  scope GeographicScope
-  eventType EventType
-  customEventType String?
-  deliveryMode DeliveryMode
-  status ConferenceStatus @default(DRAFT)
-  featured Boolean @default(false)
-  startDate DateTime
-  endDate DateTime
-  timezone String @default("UTC")
-  venueName String?
-  city String?
-  region String?
-  country String?
-  venueDescription String?
-  mapUrl String?
-  virtualInfo String?
-  travelInfo String?
-  accommodationInfo String?
-  callForPapers String?
-  submissionGuidelines String?
-  abstractAllowed Boolean @default(false)
-  fullPaperAllowed Boolean @default(false)
-  posterAllowed Boolean @default(false)
-  workshopProposalAllowed Boolean @default(false)
-  submissionTypes String?
-  submissionState SubmissionState @default(UPCOMING)
-  registrationInfo String?
-  contactName String?
-  contactRole String?
-  contactEmail String?
-  contactPhone String?
-  contactText String?
-  seoTitle String?
-  metaDescription String?
-  publishedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  categories ConferenceCategory[]
-  sections ConferenceSection[]
-  importantDates ImportantDate[]
-  tracks ConferenceTrack[]
-  committees Committee[]
-  speakers Speaker[]
-  organizers Organizer[]
-  fees RegistrationFee[]
-  programmeItems ConferenceProgrammeItem[]
-  sponsors Sponsor[]
-  documents ConferenceDocument[]
-  faqs ConferenceFaq[]
-  announcements ConferenceAnnouncement[]
-  proceedings Proceeding[]
-  media MediaAsset[] @relation("ConferenceMedia")
-  logo MediaAsset? @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
-  logoId String? @unique
-  banner MediaAsset? @relation("ConferenceBanner", fields: [bannerId], references: [id], onDelete: SetNull)
-  bannerId String? @unique
-  socialImage MediaAsset? @relation("ConferenceSocial", fields: [socialImageId], references: [id], onDelete: SetNull)
-  socialImageId String? @unique
+  id                      String                    @id @default(cuid())
+  title                   String
+  acronym                 String?
+  slug                    String                    @unique
+  shortDescription        String
+  about                   String?
+  theme                   String?
+  scope                   GeographicScope
+  eventType               EventType
+  customEventType         String?
+  deliveryMode            DeliveryMode
+  status                  ConferenceStatus          @default(DRAFT)
+  featured                Boolean                   @default(false)
+  startDate               DateTime
+  endDate                 DateTime
+  timezone                String                    @default("UTC")
+  venueName               String?
+  city                    String?
+  region                  String?
+  country                 String?
+  venueDescription        String?
+  mapUrl                  String?
+  virtualInfo             String?
+  travelInfo              String?
+  accommodationInfo       String?
+  callForPapers           String?
+  submissionGuidelines    String?
+  abstractAllowed         Boolean                   @default(false)
+  fullPaperAllowed        Boolean                   @default(false)
+  posterAllowed           Boolean                   @default(false)
+  workshopProposalAllowed Boolean                   @default(false)
+  submissionTypes         String?
+  submissionState         SubmissionState           @default(UPCOMING)
+  registrationInfo        String?
+  contactName             String?
+  contactRole             String?
+  contactEmail            String?
+  contactPhone            String?
+  contactText             String?
+  seoTitle                String?
+  metaDescription         String?
+  publishedAt             DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  categories              ConferenceCategory[]
+  sections                ConferenceSection[]
+  importantDates          ImportantDate[]
+  tracks                  ConferenceTrack[]
+  committees              Committee[]
+  speakers                Speaker[]
+  organizers              Organizer[]
+  fees                    RegistrationFee[]
+  programmeItems          ConferenceProgrammeItem[]
+  sponsors                Sponsor[]
+  documents               ConferenceDocument[]
+  faqs                    ConferenceFaq[]
+  announcements           ConferenceAnnouncement[]
+  submissions             Submission[]
+  proceedings             Proceeding[]
+  media                   MediaAsset[]              @relation("ConferenceMedia")
+  logo                    MediaAsset?               @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  logoId                  String?                   @unique
+  banner                  MediaAsset?               @relation("ConferenceBanner", fields: [bannerId], references: [id], onDelete: SetNull)
+  bannerId                String?                   @unique
+  socialImage             MediaAsset?               @relation("ConferenceSocial", fields: [socialImageId], references: [id], onDelete: SetNull)
+  socialImageId           String?                   @unique
+
   @@index([status, startDate])
   @@index([scope, status])
   @@index([deliveryMode, status])
 }
 
 model Category {
-  id String @id @default(cuid())
-  name String @unique
-  slug String @unique
+  id          String               @id @default(cuid())
+  name        String               @unique
+  slug        String               @unique
   description String?
   conferences ConferenceCategory[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 }
+
 model ConferenceCategory {
   conferenceId String
-  categoryId String
-  primary Boolean @default(false)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String
+  primary      Boolean    @default(false)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@id([conferenceId, categoryId])
   @@index([categoryId, primary])
 }
+
 model ConferenceSection {
-  id String @id @default(cuid())
-  conferenceId String
-  key String
-  label String
-  enabled Boolean @default(true)
-  showWhenEmpty Boolean @default(false)
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  id            String     @id @default(cuid())
+  conferenceId  String
+  key           String
+  label         String
+  enabled       Boolean    @default(true)
+  showWhenEmpty Boolean    @default(false)
+  sortOrder     Int        @default(0)
+  conference    Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
   @@unique([conferenceId, key])
   @@index([conferenceId, sortOrder])
 }
+
 model ImportantDate {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  type DateType
-  customLabel String?
-  date DateTime
-  notes String?
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  type         DateType
+  customLabel  String?
+  date         DateTime
+  notes        String?
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
   @@index([conferenceId, date])
 }
+
 model ConferenceTrack {
-  id String @id @default(cuid())
+  id           String       @id @default(cuid())
   conferenceId String
-  title String
-  description String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  sortOrder    Int          @default(0)
+  conference   Conference   @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  submissions  Submission[]
+
   @@index([conferenceId, sortOrder])
 }
+
 model Committee {
-  id String @id @default(cuid())
+  id           String            @id @default(cuid())
   conferenceId String
-  name String
-  description String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  members CommitteeMember[]
+  name         String
+  description  String?
+  sortOrder    Int               @default(0)
+  conference   Conference        @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  members      CommitteeMember[]
+
   @@index([conferenceId, sortOrder])
 }
+
 model CommitteeMember {
-  id String @id @default(cuid())
+  id          String      @id @default(cuid())
   committeeId String
-  name String
-  role String?
+  name        String
+  role        String?
   affiliation String?
-  country String?
-  biography String?
-  sortOrder Int @default(0)
-  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
-  photo MediaAsset? @relation("CommitteePhoto", fields: [photoId], references: [id], onDelete: SetNull)
-  photoId String?
+  country     String?
+  biography   String?
+  sortOrder   Int         @default(0)
+  committee   Committee   @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  photo       MediaAsset? @relation("CommitteePhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  photoId     String?
+
   @@index([committeeId, sortOrder])
 }
+
 model Speaker {
-  id String @id @default(cuid())
+  id           String      @id @default(cuid())
   conferenceId String
-  type SpeakerType
-  customType String?
-  name String
-  designation String?
-  affiliation String?
-  country String?
-  biography String?
-  talkTitle String?
-  profileUrl String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  photo MediaAsset? @relation("SpeakerPhoto", fields: [photoId], references: [id], onDelete: SetNull)
-  photoId String?
+  type         SpeakerType
+  customType   String?
+  name         String
+  designation  String?
+  affiliation  String?
+  country      String?
+  biography    String?
+  talkTitle    String?
+  profileUrl   String?
+  sortOrder    Int         @default(0)
+  conference   Conference  @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  photo        MediaAsset? @relation("SpeakerPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  photoId      String?
+
   @@index([conferenceId, sortOrder])
 }
+
 model Organizer {
-  id String @id @default(cuid())
+  id           String        @id @default(cuid())
   conferenceId String
-  type OrganizerType
-  customType String?
-  name String
-  description String?
-  url String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  logo MediaAsset? @relation("OrganizerLogo", fields: [logoId], references: [id], onDelete: SetNull)
-  logoId String?
+  type         OrganizerType
+  customType   String?
+  name         String
+  description  String?
+  url          String?
+  sortOrder    Int           @default(0)
+  conference   Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  logo         MediaAsset?   @relation("OrganizerLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  logoId       String?
+
   @@index([conferenceId, sortOrder])
 }
+
 model RegistrationFee {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  category String
-  audience String?
-  priceTier String
-  currency String
-  amount Decimal
-  startsAt DateTime?
-  endsAt DateTime?
-  notes String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  category     String
+  audience     String?
+  priceTier    String
+  currency     String
+  amount       Decimal
+  startsAt     DateTime?
+  endsAt       DateTime?
+  notes        String?
+  sortOrder    Int        @default(0)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
   @@index([conferenceId, sortOrder])
 }
+
 model ConferenceProgrammeItem {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  day DateTime
-  title String
-  startsAt DateTime?
-  endsAt DateTime?
-  room String?
-  description String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  day          DateTime
+  title        String
+  startsAt     DateTime?
+  endsAt       DateTime?
+  room         String?
+  description  String?
+  sortOrder    Int        @default(0)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
   @@index([conferenceId, day, sortOrder])
 }
+
 model Sponsor {
-  id String @id @default(cuid())
+  id           String      @id @default(cuid())
   conferenceId String
-  name String
-  tier String?
-  url String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  logo MediaAsset? @relation("SponsorLogo", fields: [logoId], references: [id], onDelete: SetNull)
-  logoId String?
+  name         String
+  tier         String?
+  url          String?
+  sortOrder    Int         @default(0)
+  conference   Conference  @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  logo         MediaAsset? @relation("SponsorLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  logoId       String?
+
   @@index([conferenceId, sortOrder])
 }
+
 model MediaAsset {
-  id String @id @default(cuid())
-  kind MediaKind
-  objectKey String @unique
-  originalName String
-  mimeType String
-  byteSize Int
-  altText String?
-  width Int?
-  height Int?
-  conferenceId String?
-  conference Conference? @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
-  logoFor Conference? @relation("ConferenceLogo")
-  bannerFor Conference? @relation("ConferenceBanner")
-  socialFor Conference? @relation("ConferenceSocial")
-  speakerPhotos Speaker[] @relation("SpeakerPhoto")
-  committeePhotos CommitteeMember[] @relation("CommitteePhoto")
-  organizerLogos Organizer[] @relation("OrganizerLogo")
-  sponsorLogos Sponsor[] @relation("SponsorLogo")
-  blogCovers BlogPost[] @relation("BlogCover")
-  documents ConferenceDocument[]
-  createdAt DateTime @default(now())
+  id                 String               @id @default(cuid())
+  kind               MediaKind
+  objectKey          String               @unique
+  originalName       String
+  mimeType           String
+  byteSize           Int
+  altText            String?
+  width              Int?
+  height             Int?
+  conferenceId       String?
+  conference         Conference?          @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
+  logoFor            Conference?          @relation("ConferenceLogo")
+  bannerFor          Conference?          @relation("ConferenceBanner")
+  socialFor          Conference?          @relation("ConferenceSocial")
+  speakerPhotos      Speaker[]            @relation("SpeakerPhoto")
+  committeePhotos    CommitteeMember[]    @relation("CommitteePhoto")
+  organizerLogos     Organizer[]          @relation("OrganizerLogo")
+  sponsorLogos       Sponsor[]            @relation("SponsorLogo")
+  blogCovers         BlogPost[]           @relation("BlogCover")
+  documents          ConferenceDocument[]
+  submissionVersions SubmissionVersion[]
+  createdAt          DateTime             @default(now())
+
   @@index([conferenceId, createdAt])
 }
+
+model Submission {
+  id           String               @id @default(cuid())
+  conferenceId String
+  ownerId      String
+  title        String
+  abstractText String
+  keywords     String?
+  kind         SubmissionKind
+  trackId      String?
+  status       SubmissionStatus     @default(DRAFT)
+  submittedAt  DateTime?
+  withdrawnAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  conference   Conference           @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  owner        User                 @relation("SubmissionOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  track        ConferenceTrack?     @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  authors      SubmissionAuthor[]
+  versions     SubmissionVersion[]
+  assignments  ReviewAssignment[]
+  decisions    SubmissionDecision[]
+
+  @@index([ownerId, updatedAt])
+  @@index([conferenceId, status])
+}
+
+model SubmissionAuthor {
+  id            String     @id @default(cuid())
+  submissionId  String
+  name          String
+  email         String
+  affiliation   String?
+  country       String?
+  corresponding Boolean    @default(false)
+  sortOrder     Int        @default(0)
+  submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, sortOrder])
+}
+
+model SubmissionVersion {
+  id                  String      @id @default(cuid())
+  submissionId        String
+  versionNumber       Int
+  mediaId             String?
+  responseToReviewers String?
+  submittedAt         DateTime    @default(now())
+  submission          Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  media               MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([submissionId, versionNumber])
+}
+
+model ReviewAssignment {
+  id             String                 @id @default(cuid())
+  submissionId   String
+  reviewerId     String
+  status         ReviewAssignmentStatus @default(INVITED)
+  dueAt          DateTime?
+  conflictReason String?
+  invitedAt      DateTime               @default(now())
+  respondedAt    DateTime?
+  submission     Submission             @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer       User                   @relation("AssignedReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  review         Review?
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId, status])
+}
+
+model Review {
+  id                   String               @id @default(cuid())
+  assignmentId         String               @unique
+  recommendation       ReviewRecommendation
+  authorComments       String
+  confidentialComments String?
+  submittedAt          DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  assignment           ReviewAssignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+model SubmissionDecision {
+  id           String       @id @default(cuid())
+  submissionId String
+  decidedById  String
+  type         DecisionType
+  comments     String
+  createdAt    DateTime     @default(now())
+  submission   Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  decidedBy    User         @relation("DecisionMaker", fields: [decidedById], references: [id], onDelete: Restrict)
+
+  @@index([submissionId, createdAt])
+}
+
 model ConferenceDocument {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  mediaId String
-  title String
+  mediaId      String
+  title        String
   documentType String
-  description String?
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  description  String?
+  sortOrder    Int        @default(0)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  media        MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
   @@index([conferenceId, sortOrder])
 }
+
 model ConferenceFaq {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  question String
-  answer String
-  sortOrder Int @default(0)
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  question     String
+  answer       String
+  sortOrder    Int        @default(0)
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
   @@index([conferenceId, sortOrder])
 }
+
 model ConferenceAnnouncement {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  title String
-  body String
-  publishedAt DateTime?
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  title        String
+  body         String
+  publishedAt  DateTime?
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
   @@index([conferenceId, publishedAt])
 }
+
 model BlogPost {
-  id String @id @default(cuid())
-  title String
-  slug String @unique
-  excerpt String
-  body String
-  authorName String?
-  status ContentStatus @default(DRAFT)
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  excerpt     String
+  body        String
+  authorName  String?
+  status      ContentStatus @default(DRAFT)
   publishedAt DateTime?
-  cover MediaAsset? @relation("BlogCover", fields: [coverId], references: [id], onDelete: SetNull)
-  coverId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  cover       MediaAsset?   @relation("BlogCover", fields: [coverId], references: [id], onDelete: SetNull)
+  coverId     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   @@index([status, publishedAt])
 }
+
 model Subscriber {
-  id String @id @default(cuid())
-  email String @unique
-  active Boolean @default(true)
+  id             String    @id @default(cuid())
+  email          String    @unique
+  active         Boolean   @default(true)
   unsubscribedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
+
 model Proceeding {
-  id String @id @default(cuid())
+  id           String        @id @default(cuid())
   conferenceId String
-  title String
-  slug String @unique
-  description String?
-  status ContentStatus @default(DRAFT)
-  publishedAt DateTime?
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  title        String
+  slug         String        @unique
+  description  String?
+  status       ContentStatus @default(DRAFT)
+  publishedAt  DateTime?
+  conference   Conference    @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
   @@index([status, publishedAt])
 }
+
 model AuditEvent {
-  id String @id @default(cuid())
-  userId String?
-  action String
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
   entityType String?
-  entityId String?
-  metadata String?
-  ipHash String?
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  entityId   String?
+  metadata   String?
+  ipHash     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
   @@index([action, createdAt])
   @@index([entityType, entityId])
 }

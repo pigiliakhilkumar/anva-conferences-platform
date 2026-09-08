@@ -18,7 +18,7 @@ const primaryLinks = [
 
 export function PublicShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin")) return <>{children}</>;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/workspace")) return <>{children}</>;
   return <div className={styles.shell}>
     <a className={styles.skip} href="#main-content">Skip to main content</a>
     <header className={styles.header}>

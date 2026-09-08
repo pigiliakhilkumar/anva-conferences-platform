@@ -39,6 +39,24 @@ export async function requireAdmin() {
   return user;
 }
 
+export async function requireAccount() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?returnTo=/workspace");
+  return user;
+}
+
+export async function requireReviewer() {
+  const user = await getCurrentUser();
+  if (!user || !["REVIEWER", "CONFERENCE_MANAGER", "ADMINISTRATOR"].includes(user.role)) redirect("/login?returnTo=/workspace/reviews");
+  return user;
+}
+
+export async function requireManager() {
+  const user = await getCurrentUser();
+  if (!user || !["CONFERENCE_MANAGER", "ADMINISTRATOR"].includes(user.role)) redirect("/login?returnTo=/workspace/manage");
+  return user;
+}
+
 export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
