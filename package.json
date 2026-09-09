@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "build:production": "prisma generate --schema prisma/schema.mysql.prisma && cross-env NODE_ENV=production next build --webpack",
+    "build:production": "prisma generate --schema prisma/schema.mysql.prisma && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
