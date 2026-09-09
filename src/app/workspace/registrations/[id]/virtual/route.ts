@@ -1,0 +1,2 @@
+import { requireAccount } from "@/lib/auth"; import { db } from "@/lib/db";
+export async function GET(_: Request,{params}:{params:Promise<{id:string}>}){const u=await requireAccount();const r=await db.registration.findFirst({where:{id:(await params).id,userId:u.id,status:{in:["CONFIRMED","COMPLIMENTARY"]}},include:{conference:true}});if(!r)return new Response("Not found",{status:404});return Response.json({conference:r.conference.title,virtualInfo:r.conference.virtualInfo||null});}

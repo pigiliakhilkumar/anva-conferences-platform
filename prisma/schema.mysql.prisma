@@ -1279,7 +1279,7 @@ model AttendanceRecord {
 }
 
 model SavedProgrammeItem {
-  id           String           @id
+  id           String           @id @default(cuid())
   userId       String
   sessionId    String
   createdAt    DateTime         @default(now())
