@@ -1,0 +1,5 @@
+import { requireAccount } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { ActionForm } from "@/components/workspace/action-form";
+import { removeProgrammeAction } from "@/app/actions/schedule";
+export default async function SchedulePage() { const u = await requireAccount(); const items = await db.savedProgrammeItem.findMany({ where: { userId: u.id, session: { visibility: "PUBLISHED" } }, include: { session: { include: { conference: true, day: true, room: true } } }, orderBy: { session: { startsAt: "asc" } } }); return <><header className="admin-header"><p className="eyebrow">Participant programme</p><h1>My Schedule</h1></header><section className="admin-panel">{items.length ? items.map(i => <article key={i.id}><h2>{i.session.title}</h2><p>{i.session.conference.title} · {i.session.day.title} · {i.session.room?.name || "Online"}</p><ActionForm action={removeProgrammeAction} submitLabel="Remove"><input type="hidden" name="sessionId" value={i.sessionId}/></ActionForm></article>) : <p className="empty-state">You have not saved any programme sessions yet.</p>}</section></>; }

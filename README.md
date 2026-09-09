@@ -201,6 +201,8 @@ Phase 3 adds conference-scoped registrations, configurable categories and time-w
 
 ## Security operations
 
+Phase 3 final operations include scoped registration administration, waiver/discount controls, cancellation and refund records (without live gateway execution), receipt/invoice issuance, attendee/check-in/attendance tools, programme scheduling, participant My Schedule bookmarks, and protected CSV export foundations. Payment proofs and financial records remain authorization-protected and historical snapshots are not recomputed from later pricing changes. No live payment gateway, SMTP delivery, certificate generation, or proceedings production is enabled.
+
 - Rotate `AUTH_SECRET` deliberately; changing it invalidates protection for existing authentication state and should be paired with session cleanup.
 - Restrict database and storage permissions to the application user.
 - Keep dependencies patched and run `npm audit` as part of release review.

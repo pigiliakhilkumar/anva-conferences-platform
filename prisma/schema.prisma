@@ -297,6 +297,7 @@ model User {
   programmeAssignments         ProgrammeAssignment[]
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
+  SavedProgrammeItem           SavedProgrammeItem[]
 }
 
 model Session {
@@ -626,6 +627,7 @@ model Submission {
   history                    SubmissionStatusHistory[]
   registrations              Registration[]
   programmeAssignments       ProgrammeAssignment[]
+  savedProgrammeItems        SavedProgrammeItem[]
 
   @@index([ownerId, updatedAt])
   @@index([conferenceId, status])
@@ -1206,6 +1208,7 @@ model ProgrammeSession {
   track         ConferenceTrack?      @relation(fields: [trackId], references: [id], onDelete: SetNull)
   assignments   ProgrammeAssignment[]
   attendance    AttendanceRecord[]
+  savedBy       SavedProgrammeItem[]
 
   @@index([conferenceId, startsAt, endsAt])
   @@index([dayId, sortOrder])
@@ -1273,4 +1276,18 @@ model AttendanceRecord {
   recordedBy   User              @relation("AttendanceRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
 
   @@index([attendeeId, attendedAt])
+}
+
+model SavedProgrammeItem {
+  id           String           @id @default(cuid())
+  userId       String
+  sessionId    String
+  createdAt    DateTime         @default(now())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session      ProgrammeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  Submission   Submission?      @relation(fields: [submissionId], references: [id])
+  submissionId String?
+
+  @@unique([userId, sessionId])
+  @@index([userId, createdAt])
 }
