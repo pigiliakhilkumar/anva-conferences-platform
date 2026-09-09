@@ -168,6 +168,14 @@ enum NotificationType {
   PROGRAMME_PUBLISHED
   PRESENTATION_SCHEDULED
   PROGRAMME_CHANGED
+  CERTIFICATE_ISSUED
+  CERTIFICATE_REVOKED
+  PROCEEDINGS_PUBLISHED
+}
+
+enum CertificateStatus {
+  ISSUED
+  REVOKED
 }
 
 enum RegistrationStatus {
@@ -298,6 +306,7 @@ model User {
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   SavedProgrammeItem           SavedProgrammeItem[]
+  certificates                 Certificate[]
 }
 
 model Session {
@@ -383,6 +392,9 @@ model Conference {
   payments                Payment[]
   invoices                Invoice[]
   receipts                Receipt[]
+  certificateTypes        CertificateType[]
+  certificateTemplates    CertificateTemplate[]
+  certificates            Certificate[]
   proceedings             Proceeding[]
   media                   MediaAsset[]                  @relation("ConferenceMedia")
   logo                    MediaAsset?                   @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
@@ -568,29 +580,30 @@ model Sponsor {
 }
 
 model MediaAsset {
-  id                  String                    @id @default(cuid())
-  kind                MediaKind
-  objectKey           String                    @unique
-  originalName        String
-  mimeType            String
-  byteSize            Int
-  altText             String?
-  width               Int?
-  height              Int?
-  conferenceId        String?
-  conference          Conference?               @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
-  logoFor             Conference?               @relation("ConferenceLogo")
-  bannerFor           Conference?               @relation("ConferenceBanner")
-  socialFor           Conference?               @relation("ConferenceSocial")
-  speakerPhotos       Speaker[]                 @relation("SpeakerPhoto")
-  committeePhotos     CommitteeMember[]         @relation("CommitteePhoto")
-  organizerLogos      Organizer[]               @relation("OrganizerLogo")
-  sponsorLogos        Sponsor[]                 @relation("SponsorLogo")
-  blogCovers          BlogPost[]                @relation("BlogCover")
-  documents           ConferenceDocument[]
-  submissionVersions  SubmissionVersion[]
-  manualPaymentProofs ManualPaymentSubmission[] @relation("ManualPaymentProof")
-  createdAt           DateTime                  @default(now())
+  id                   String                    @id @default(cuid())
+  kind                 MediaKind
+  objectKey            String                    @unique
+  originalName         String
+  mimeType             String
+  byteSize             Int
+  altText              String?
+  width                Int?
+  height               Int?
+  conferenceId         String?
+  conference           Conference?               @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
+  logoFor              Conference?               @relation("ConferenceLogo")
+  bannerFor            Conference?               @relation("ConferenceBanner")
+  socialFor            Conference?               @relation("ConferenceSocial")
+  speakerPhotos        Speaker[]                 @relation("SpeakerPhoto")
+  committeePhotos      CommitteeMember[]         @relation("CommitteePhoto")
+  organizerLogos       Organizer[]               @relation("OrganizerLogo")
+  sponsorLogos         Sponsor[]                 @relation("SponsorLogo")
+  blogCovers           BlogPost[]                @relation("BlogCover")
+  documents            ConferenceDocument[]
+  submissionVersions   SubmissionVersion[]
+  manualPaymentProofs  ManualPaymentSubmission[] @relation("ManualPaymentProof")
+  proceedingFinalFiles ProceedingContribution[]
+  createdAt            DateTime                  @default(now())
 
   @@index([conferenceId, createdAt])
 }
@@ -626,6 +639,7 @@ model Submission {
   decisions                  SubmissionDecision[]
   history                    SubmissionStatusHistory[]
   registrations              Registration[]
+  proceedingContributions    ProceedingContribution[]
   programmeAssignments       ProgrammeAssignment[]
   savedProgrammeItems        SavedProgrammeItem[]
 
@@ -807,18 +821,100 @@ model Subscriber {
 }
 
 model Proceeding {
-  id           String        @id @default(cuid())
-  conferenceId String
-  title        String
-  slug         String        @unique
-  description  String?
-  status       ContentStatus @default(DRAFT)
-  publishedAt  DateTime?
-  conference   Conference    @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id              String                   @id @default(cuid())
+  conferenceId    String
+  title           String
+  slug            String                   @unique
+  description     String?
+  status          ContentStatus            @default(DRAFT)
+  publishedAt     DateTime?
+  conference      Conference               @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  subtitle        String?
+  publicationDate DateTime?
+  volume          String?
+  publisher       String?
+  isbn            String?
+  issn            String?
+  doi             String?
+  contributions   ProceedingContribution[]
 
   @@index([status, publishedAt])
+}
+
+model CertificateType {
+  id             String        @id @default(cuid())
+  conferenceId   String
+  name           String
+  description    String?
+  active         Boolean       @default(true)
+  conference     Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  certificates   Certificate[]
+  Registration   Registration? @relation(fields: [registrationId], references: [id])
+  registrationId String?
+
+  @@unique([conferenceId, name])
+}
+
+model CertificateTemplate {
+  id             String        @id @default(cuid())
+  conferenceId   String
+  title          String
+  body           String?
+  organizer      String?
+  signatoryName  String?
+  signatoryTitle String?
+  footer         String?
+  conference     Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  certificates   Certificate[]
+  Registration   Registration? @relation(fields: [registrationId], references: [id])
+  registrationId String?
+}
+
+model Certificate {
+  id                String               @id @default(cuid())
+  certificateNumber String               @unique
+  verificationToken String               @unique
+  conferenceId      String
+  userId            String
+  typeId            String
+  templateId        String?
+  status            CertificateStatus    @default(ISSUED)
+  recipientName     String
+  conferenceTitle   String
+  typeName          String
+  issuedAt          DateTime             @default(now())
+  revokedAt         DateTime?
+  revokeReason      String?
+  conference        Conference           @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  type              CertificateType      @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  template          CertificateTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  Registration      Registration?        @relation(fields: [registrationId], references: [id])
+  registrationId    String?
+
+  @@index([conferenceId, status])
+}
+
+model ProceedingContribution {
+  id              String      @id @default(cuid())
+  proceedingId    String
+  submissionId    String
+  title           String
+  authorsSnapshot String?
+  abstractText    String?
+  keywords        String?
+  finalFileId     String?
+  included        Boolean     @default(false)
+  published       Boolean     @default(false)
+  pageStart       Int?
+  pageEnd         Int?
+  proceeding      Proceeding  @relation(fields: [proceedingId], references: [id], onDelete: Cascade)
+  submission      Submission  @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  finalFile       MediaAsset? @relation(fields: [finalFileId], references: [id], onDelete: SetNull)
+
+  @@unique([proceedingId, submissionId])
 }
 
 model AuditEvent {
@@ -927,6 +1023,9 @@ model Registration {
   manualPayments            ManualPaymentSubmission[]
   invoices                  Invoice[]
   receipts                  Receipt[]
+  certificateTypes          CertificateType[]
+  certificateTemplates      CertificateTemplate[]
+  certificates              Certificate[]
   cancellations             CancellationRequest[]
   refunds                   Refund[]
   attendee                  Attendee?

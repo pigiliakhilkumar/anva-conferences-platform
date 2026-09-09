@@ -1,0 +1,10 @@
+"use server";
+import { randomBytes } from "node:crypto";
+import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
+import { requireAccount, requireConferenceManager } from "@/lib/auth";
+import { audit } from "@/lib/audit";
+import type { ActionState } from "@/lib/validation";
+const ref=()=>`ANVA-CERT-${new Date().getFullYear()}-${randomBytes(5).toString("hex").toUpperCase()}`;
+export async function issueCertificateAction(_:ActionState,fd:FormData):Promise<ActionState>{const c=String(fd.get("conferenceId")||"");const u=await requireConferenceManager(c);const userId=String(fd.get("userId")||"");const typeId=String(fd.get("typeId")||"");const [user,type,conf]=await Promise.all([db.user.findUnique({where:{id:userId}}),db.certificateType.findFirst({where:{id:typeId,conferenceId:c,active:true}}),db.conference.findUnique({where:{id:c}})]);if(!user||!type||!conf)return{ok:false,message:"Certificate details are invalid."};const existing=await db.certificate.findFirst({where:{conferenceId:c,userId,typeId,status:"ISSUED"}});if(existing)return{ok:false,message:"An active certificate already exists."};const cert=await db.certificate.create({data:{certificateNumber:ref(),verificationToken:randomBytes(24).toString("base64url"),conferenceId:c,userId,typeId,recipientName:user.name||user.email,conferenceTitle:conf.title,typeName:type.name}});await audit("CERTIFICATE_ISSUED",u.id,"Certificate",cert.id);revalidatePath("/workspace/certificates");return{ok:true,message:"Certificate issued."};}
+export async function revokeCertificateAction(_:ActionState,fd:FormData):Promise<ActionState>{const id=String(fd.get("certificateId")||"");const cert=await db.certificate.findUnique({where:{id}});if(!cert)return{ok:false,message:"Certificate not found."};const u=await requireConferenceManager(cert.conferenceId);await db.certificate.update({where:{id},data:{status:"REVOKED",revokedAt:new Date(),revokeReason:String(fd.get("reason")||"").slice(0,500)}});await audit("CERTIFICATE_REVOKED",u.id,"Certificate",id);return{ok:true,message:"Certificate revoked."};}
