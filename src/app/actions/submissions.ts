@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
-import { requireAccount, requireManager, requireReviewer } from "@/lib/auth";
+import { requireAccount, requireConferenceManager, requireReviewer } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createObjectKey, MediaValidationError, persistUpload, removeStoredMedia, validateUpload } from "@/lib/media";
 import { canEditSubmission, conferenceAcceptsKind, statusForDecision } from "@/lib/submission-policy";
@@ -97,7 +97,7 @@ export async function submitReviewAction(assignmentId: string, _: ActionState, f
 }
 
 export async function assignReviewerAction(submissionId: string, _: ActionState, formData: FormData): Promise<ActionState> {
-  const manager = await requireManager(); const email = String(formData.get("email") || "").trim().toLowerCase(); const dueAt = new Date(String(formData.get("dueAt") || ""));
+  const target = await db.submission.findUnique({ where: { id: submissionId }, select: { conferenceId: true } }); if (!target) return { ok: false, message: "Submission not found." }; const manager = await requireConferenceManager(target.conferenceId); const email = String(formData.get("email") || "").trim().toLowerCase(); const dueAt = new Date(String(formData.get("dueAt") || ""));
   const reviewer = await db.user.findUnique({ where: { email } }); if (!reviewer || reviewer.role !== "REVIEWER" || !reviewer.active) return { ok: false, message: "No active reviewer account has that email address." };
   const submission = await db.submission.findUnique({ where: { id: submissionId } }); if (!submission || !["SUBMITTED", "UNDER_REVIEW"].includes(submission.status)) return { ok: false, message: "This submission is not available for review assignment." };
   const isAuthor = reviewer.id === submission.ownerId || Boolean(await db.submissionAuthor.findFirst({ where: { submissionId, email: reviewer.email }, select: { id: true } }));
@@ -107,13 +107,13 @@ export async function assignReviewerAction(submissionId: string, _: ActionState,
   await audit("REVIEWER_ASSIGNED", manager.id, "Submission", submissionId, { reviewerId: reviewer.id }); revalidatePath(`/workspace/manage/submissions/${submissionId}`); return { ok: true, message: "Reviewer assigned." };
 }
 export async function recordDecisionAction(submissionId: string, _: ActionState, formData: FormData): Promise<ActionState> {
-  const manager = await requireManager(); const parsed = decisionSchema.safeParse(values(formData)); if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Check the decision." };
+  const target = await db.submission.findUnique({ where: { id: submissionId }, select: { conferenceId: true } }); if (!target) return { ok: false, message: "Submission not found." }; const manager = await requireConferenceManager(target.conferenceId); const parsed = decisionSchema.safeParse(values(formData)); if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Check the decision." };
   const submission = await db.submission.findUnique({ where: { id: submissionId } }); if (!submission || !["SUBMITTED", "UNDER_REVIEW"].includes(submission.status)) return { ok: false, message: "A decision cannot be recorded in the current state." };
   const nextStatus = statusForDecision(parsed.data.type); await db.$transaction([db.submissionDecision.create({ data: { submissionId, decidedById: manager.id, revisionRound: (await db.submissionVersion.count({ where: { submissionId } })), ...parsed.data } }), db.submission.update({ where: { id: submissionId }, data: { status: nextStatus } }), db.submissionStatusHistory.create({ data: { submissionId, fromStatus: submission.status, toStatus: nextStatus, note: parsed.data.comments, changedById: manager.id } })]); await notify(submission.ownerId, parsed.data.type === "REVISION_REQUIRED" || parsed.data.type === "MINOR_REVISION" || parsed.data.type === "MAJOR_REVISION" ? "REVISION_REQUESTED" : "DECISION_ISSUED", "Editorial decision issued", `${submission.referenceNumber} has a new editorial decision.`); await audit("SUBMISSION_DECIDED", manager.id, "Submission", submissionId, { decision: parsed.data.type }); revalidatePath(`/workspace/manage/submissions/${submissionId}`); return { ok: true, message: "Decision recorded and visible to the author." };
 }
 
 export async function technicalCheckAction(submissionId: string, passed: boolean, _: ActionState, formData: FormData): Promise<ActionState> {
-  const manager = await requireManager(); const notes = String(formData.get("notes") || "").trim();
+  const target = await db.submission.findUnique({ where: { id: submissionId }, select: { conferenceId: true } }); if (!target) return { ok: false, message: "Submission not found." }; const manager = await requireConferenceManager(target.conferenceId); const notes = String(formData.get("notes") || "").trim();
   if (notes.length > 10000 || (!passed && notes.length < 5)) throw new Error(passed ? "Technical notes are too long." : "Explain what the author must correct.");
   const submission = await db.submission.findUnique({ where: { id: submissionId } });
   if (!submission || !["SUBMITTED", "TECHNICAL_CHECK", "REVISED"].includes(submission.status)) throw new Error("This submission is not awaiting technical screening.");
@@ -123,7 +123,7 @@ export async function technicalCheckAction(submissionId: string, passed: boolean
 }
 
 export async function classifyPresentationAction(submissionId: string, _: ActionState, formData: FormData): Promise<ActionState> {
-  const manager = await requireManager(); const classification = String(formData.get("classification") || ""); const notes = String(formData.get("notes") || "").trim();
+  const target = await db.submission.findUnique({ where: { id: submissionId }, select: { conferenceId: true } }); if (!target) return { ok: false, message: "Submission not found." }; const manager = await requireConferenceManager(target.conferenceId); const classification = String(formData.get("classification") || ""); const notes = String(formData.get("notes") || "").trim();
   if (!["NOT_CLASSIFIED", "ORAL", "POSTER", "OTHER"].includes(classification)) return { ok: false, message: "Choose a valid presentation classification." };
   const submission = await db.submission.findUnique({ where: { id: submissionId, status: "ACCEPTED" } }); if (!submission) return { ok: false, message: "Only accepted submissions can be classified." };
   await db.submission.update({ where: { id: submissionId }, data: { presentationClassification: classification as "NOT_CLASSIFIED" | "ORAL" | "POSTER" | "OTHER", presentationNotes: notes || null } }); await audit("PRESENTATION_CLASSIFIED", manager.id, "Submission", submissionId, { classification }); revalidatePath(`/workspace/manage/submissions/${submissionId}`); return { ok: true, message: "Presentation classification saved." };

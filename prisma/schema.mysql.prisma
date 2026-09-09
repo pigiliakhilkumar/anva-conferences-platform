@@ -157,37 +157,146 @@ enum NotificationType {
   REVIEW_SUBMITTED
   REVISION_REQUESTED
   DECISION_ISSUED
+  REGISTRATION_CREATED
+  PAYMENT_PENDING
+  MANUAL_PAYMENT_SUBMITTED
+  PAYMENT_VERIFIED
+  PAYMENT_REJECTED
+  REGISTRATION_CONFIRMED
+  REGISTRATION_CANCELLED
+  REFUND_STATUS_CHANGED
+  PROGRAMME_PUBLISHED
+  PRESENTATION_SCHEDULED
+  PROGRAMME_CHANGED
+}
+
+enum RegistrationStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAYMENT_PENDING_VERIFICATION
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+  REFUNDED
+  COMPLIMENTARY
+}
+
+enum PaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+}
+
+enum WaiverType {
+  FULL
+  PARTIAL
+  COMPLIMENTARY
+}
+
+enum CancellationStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+enum ManualPaymentStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  CLARIFICATION_REQUIRED
+}
+
+enum ProgrammeSessionType {
+  KEYNOTE
+  PLENARY
+  ORAL
+  POSTER
+  WORKSHOP
+  PANEL
+  CEREMONY
+  NETWORKING
+  OTHER
+}
+
+enum ProgrammeVisibility {
+  DRAFT
+  PUBLISHED
+  PRIVATE
+}
+
+enum AttendeeStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum CheckInMethod {
+  MANUAL
+  QR
 }
 
 model User {
-  id                   String                    @id @default(cuid())
-  email                String                    @unique
-  name                 String?
-  passwordHash         String
-  role                 Role                      @default(PARTICIPANT)
-  active               Boolean                   @default(true)
-  sessions             Session[]
-  auditEvents          AuditEvent[]
-  submissions          Submission[]              @relation("SubmissionOwner")
-  reviewAssignments    ReviewAssignment[]        @relation("AssignedReviewer")
-  decisions            SubmissionDecision[]      @relation("DecisionMaker")
-  technicalChecks      Submission[]              @relation("TechnicalChecker")
-  notifications        Notification[]
-  statusHistoryChanges SubmissionStatusHistory[]
-  affiliation          String?
-  department           String?
-  designation          String?
-  country              String?
-  orcid                String?
-  phone                String?
-  addressLine1         String?
-  addressLine2         String?
-  city                 String?
-  region               String?
-  postalCode           String?
-  reviewerExpertise    String?
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
+  id                           String                        @id @default(cuid())
+  email                        String                        @unique
+  name                         String?
+  passwordHash                 String
+  role                         Role                          @default(PARTICIPANT)
+  active                       Boolean                       @default(true)
+  sessions                     Session[]
+  auditEvents                  AuditEvent[]
+  submissions                  Submission[]                  @relation("SubmissionOwner")
+  reviewAssignments            ReviewAssignment[]            @relation("AssignedReviewer")
+  decisions                    SubmissionDecision[]          @relation("DecisionMaker")
+  technicalChecks              Submission[]                  @relation("TechnicalChecker")
+  notifications                Notification[]
+  statusHistoryChanges         SubmissionStatusHistory[]
+  affiliation                  String?
+  department                   String?
+  designation                  String?
+  country                      String?
+  orcid                        String?
+  phone                        String?
+  addressLine1                 String?
+  addressLine2                 String?
+  city                         String?
+  region                       String?
+  postalCode                   String?
+  reviewerExpertise            String?
+  conferenceManagerAssignments ConferenceManagerAssignment[]
+  registrations                Registration[]
+  payments                     Payment[]
+  invoices                     Invoice[]
+  receipts                     Receipt[]
+  waiversGranted               RegistrationWaiver[]          @relation("WaiverAuthorizer")
+  cancellationDecisions        CancellationRequest[]         @relation("CancellationDecider")
+  refundsApproved              Refund[]                      @relation("RefundApprover")
+  checkIns                     CheckIn[]                     @relation("CheckInRecorder")
+  attendanceRecords            AttendanceRecord[]            @relation("AttendanceRecorder")
+  registrationStatusChanges    RegistrationStatusHistory[]
+  manualPaymentReviews         ManualPaymentSubmission[]     @relation("ManualPaymentReviewer")
+  refundRequests               Refund[]
+  programmeAssignments         ProgrammeAssignment[]
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
 }
 
 model Session {
@@ -202,10 +311,10 @@ model Session {
 }
 
 model Conference {
-  id                      String                    @id @default(cuid())
+  id                      String                        @id @default(cuid())
   title                   String
   acronym                 String?
-  slug                    String                    @unique
+  slug                    String                        @unique
   shortDescription        String
   about                   String?
   theme                   String?
@@ -213,11 +322,11 @@ model Conference {
   eventType               EventType
   customEventType         String?
   deliveryMode            DeliveryMode
-  status                  ConferenceStatus          @default(DRAFT)
-  featured                Boolean                   @default(false)
+  status                  ConferenceStatus              @default(DRAFT)
+  featured                Boolean                       @default(false)
   startDate               DateTime
   endDate                 DateTime
-  timezone                String                    @default("UTC")
+  timezone                String                        @default("UTC")
   venueName               String?
   city                    String?
   region                  String?
@@ -229,12 +338,12 @@ model Conference {
   accommodationInfo       String?
   callForPapers           String?
   submissionGuidelines    String?
-  abstractAllowed         Boolean                   @default(false)
-  fullPaperAllowed        Boolean                   @default(false)
-  posterAllowed           Boolean                   @default(false)
-  workshopProposalAllowed Boolean                   @default(false)
+  abstractAllowed         Boolean                       @default(false)
+  fullPaperAllowed        Boolean                       @default(false)
+  posterAllowed           Boolean                       @default(false)
+  workshopProposalAllowed Boolean                       @default(false)
   submissionTypes         String?
-  submissionState         SubmissionState           @default(UPCOMING)
+  submissionState         SubmissionState               @default(UPCOMING)
   registrationInfo        String?
   contactName             String?
   contactRole             String?
@@ -244,8 +353,8 @@ model Conference {
   seoTitle                String?
   metaDescription         String?
   publishedAt             DateTime?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
   categories              ConferenceCategory[]
   sections                ConferenceSection[]
   importantDates          ImportantDate[]
@@ -261,14 +370,26 @@ model Conference {
   announcements           ConferenceAnnouncement[]
   submissions             Submission[]
   submissionSequence      SubmissionSequence?
+  managerAssignments      ConferenceManagerAssignment[]
+  registrationCategories  RegistrationCategory[]
+  registrations           Registration[]
+  discountCodes           DiscountCode[]
+  taxConfigurations       TaxConfiguration[]
+  programmeDays           ProgrammeDay[]
+  rooms                   Room[]
+  programmeSessions       ProgrammeSession[]
+  attendees               Attendee[]
+  payments                Payment[]
+  invoices                Invoice[]
+  receipts                Receipt[]
   proceedings             Proceeding[]
-  media                   MediaAsset[]              @relation("ConferenceMedia")
-  logo                    MediaAsset?               @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
-  logoId                  String?                   @unique
-  banner                  MediaAsset?               @relation("ConferenceBanner", fields: [bannerId], references: [id], onDelete: SetNull)
-  bannerId                String?                   @unique
-  socialImage             MediaAsset?               @relation("ConferenceSocial", fields: [socialImageId], references: [id], onDelete: SetNull)
-  socialImageId           String?                   @unique
+  media                   MediaAsset[]                  @relation("ConferenceMedia")
+  logo                    MediaAsset?                   @relation("ConferenceLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  logoId                  String?                       @unique
+  banner                  MediaAsset?                   @relation("ConferenceBanner", fields: [bannerId], references: [id], onDelete: SetNull)
+  bannerId                String?                       @unique
+  socialImage             MediaAsset?                   @relation("ConferenceSocial", fields: [socialImageId], references: [id], onDelete: SetNull)
+  socialImageId           String?                       @unique
 
   @@index([status, startDate])
   @@index([scope, status])
@@ -323,13 +444,14 @@ model ImportantDate {
 }
 
 model ConferenceTrack {
-  id           String       @id @default(cuid())
-  conferenceId String
-  title        String
-  description  String?
-  sortOrder    Int          @default(0)
-  conference   Conference   @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  submissions  Submission[]
+  id                String             @id @default(cuid())
+  conferenceId      String
+  title             String
+  description       String?
+  sortOrder         Int                @default(0)
+  conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  submissions       Submission[]
+  programmeSessions ProgrammeSession[]
 
   @@index([conferenceId, sortOrder])
 }
@@ -445,28 +567,29 @@ model Sponsor {
 }
 
 model MediaAsset {
-  id                 String               @id @default(cuid())
-  kind               MediaKind
-  objectKey          String               @unique
-  originalName       String
-  mimeType           String
-  byteSize           Int
-  altText            String?
-  width              Int?
-  height             Int?
-  conferenceId       String?
-  conference         Conference?          @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
-  logoFor            Conference?          @relation("ConferenceLogo")
-  bannerFor          Conference?          @relation("ConferenceBanner")
-  socialFor          Conference?          @relation("ConferenceSocial")
-  speakerPhotos      Speaker[]            @relation("SpeakerPhoto")
-  committeePhotos    CommitteeMember[]    @relation("CommitteePhoto")
-  organizerLogos     Organizer[]          @relation("OrganizerLogo")
-  sponsorLogos       Sponsor[]            @relation("SponsorLogo")
-  blogCovers         BlogPost[]           @relation("BlogCover")
-  documents          ConferenceDocument[]
-  submissionVersions SubmissionVersion[]
-  createdAt          DateTime             @default(now())
+  id                  String                    @id @default(cuid())
+  kind                MediaKind
+  objectKey           String                    @unique
+  originalName        String
+  mimeType            String
+  byteSize            Int
+  altText             String?
+  width               Int?
+  height              Int?
+  conferenceId        String?
+  conference          Conference?               @relation("ConferenceMedia", fields: [conferenceId], references: [id], onDelete: SetNull)
+  logoFor             Conference?               @relation("ConferenceLogo")
+  bannerFor           Conference?               @relation("ConferenceBanner")
+  socialFor           Conference?               @relation("ConferenceSocial")
+  speakerPhotos       Speaker[]                 @relation("SpeakerPhoto")
+  committeePhotos     CommitteeMember[]         @relation("CommitteePhoto")
+  organizerLogos      Organizer[]               @relation("OrganizerLogo")
+  sponsorLogos        Sponsor[]                 @relation("SponsorLogo")
+  blogCovers          BlogPost[]                @relation("BlogCover")
+  documents           ConferenceDocument[]
+  submissionVersions  SubmissionVersion[]
+  manualPaymentProofs ManualPaymentSubmission[] @relation("ManualPaymentProof")
+  createdAt           DateTime                  @default(now())
 
   @@index([conferenceId, createdAt])
 }
@@ -501,6 +624,8 @@ model Submission {
   assignments                ReviewAssignment[]
   decisions                  SubmissionDecision[]
   history                    SubmissionStatusHistory[]
+  registrations              Registration[]
+  programmeAssignments       ProgrammeAssignment[]
 
   @@index([ownerId, updatedAt])
   @@index([conferenceId, status])
@@ -707,4 +832,445 @@ model AuditEvent {
 
   @@index([action, createdAt])
   @@index([entityType, entityId])
+}
+
+model ConferenceManagerAssignment {
+  id           String     @id @default(cuid())
+  conferenceId String
+  userId       String
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conferenceId, userId])
+  @@index([userId, active])
+}
+
+model RegistrationCategory {
+  id                         String              @id @default(cuid())
+  conferenceId               String
+  name                       String
+  description                String?
+  eligibilityNotes           String?
+  active                     Boolean             @default(true)
+  requiresAcceptedSubmission Boolean             @default(false)
+  invitationOnly             Boolean             @default(false)
+  manualApproval             Boolean             @default(false)
+  capacity                   Int?
+  waitlistEnabled            Boolean             @default(false)
+  opensAt                    DateTime?
+  closesAt                   DateTime?
+  sortOrder                  Int                 @default(0)
+  conference                 Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  prices                     RegistrationPrice[]
+  registrations              Registration[]
+  discountCodes              DiscountCode[]
+
+  @@index([conferenceId, active, sortOrder])
+}
+
+model RegistrationPrice {
+  id         String               @id @default(cuid())
+  categoryId String
+  tier       String
+  amount     Decimal
+  currency   String
+  domestic   Boolean?
+  startsAt   DateTime?
+  endsAt     DateTime?
+  active     Boolean              @default(true)
+  category   RegistrationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, active, startsAt, endsAt])
+}
+
+model Registration {
+  id                        String                      @id @default(cuid())
+  referenceNumber           String                      @unique
+  conferenceId              String
+  userId                    String
+  categoryId                String
+  acceptedSubmissionId      String?
+  presenter                 Boolean                     @default(false)
+  status                    RegistrationStatus          @default(DRAFT)
+  paymentStatus             PaymentStatus               @default(PENDING)
+  countryAtRegistration     String?
+  priceAmount               Decimal
+  priceCurrency             String
+  priceTier                 String
+  discountAmount            Decimal                     @default(0)
+  waiverAmount              Decimal                     @default(0)
+  taxAmount                 Decimal                     @default(0)
+  totalAmount               Decimal
+  billingName               String?
+  billingOrganization       String?
+  billingAddress            String?
+  billingTaxId              String?
+  dietaryRequirements       String?
+  accessibilityRequirements String?
+  administrativeNotes       String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  submittedAt               DateTime?
+  confirmedAt               DateTime?
+  conference                Conference                  @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  user                      User                        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  category                  RegistrationCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  acceptedSubmission        Submission?                 @relation(fields: [acceptedSubmissionId], references: [id], onDelete: SetNull)
+  statusHistory             RegistrationStatusHistory[]
+  discountRedemptions       DiscountRedemption[]
+  waivers                   RegistrationWaiver[]
+  payments                  Payment[]
+  manualPayments            ManualPaymentSubmission[]
+  invoices                  Invoice[]
+  receipts                  Receipt[]
+  cancellations             CancellationRequest[]
+  refunds                   Refund[]
+  attendee                  Attendee?
+
+  @@index([conferenceId, status, categoryId])
+  @@index([userId, status])
+}
+
+model RegistrationStatusHistory {
+  id             String              @id @default(cuid())
+  registrationId String
+  fromStatus     RegistrationStatus?
+  toStatus       RegistrationStatus
+  note           String?
+  changedById    String?
+  createdAt      DateTime            @default(now())
+  registration   Registration        @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  changedBy      User?               @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([registrationId, createdAt])
+}
+
+model DiscountCode {
+  id                    String                @id @default(cuid())
+  conferenceId          String
+  categoryId            String?
+  code                  String
+  description           String?
+  type                  DiscountType
+  value                 Decimal
+  validFrom             DateTime?
+  validUntil            DateTime?
+  maxUses               Int?
+  maxUsesPerParticipant Int?
+  minimumFee            Decimal?
+  active                Boolean               @default(true)
+  createdAt             DateTime              @default(now())
+  conference            Conference            @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  category              RegistrationCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  redemptions           DiscountRedemption[]
+
+  @@unique([conferenceId, code])
+}
+
+model DiscountRedemption {
+  id             String       @id @default(cuid())
+  discountCodeId String
+  registrationId String
+  participantId  String
+  amount         Decimal
+  createdAt      DateTime     @default(now())
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Restrict)
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+
+  @@unique([discountCodeId, registrationId])
+  @@index([discountCodeId, participantId])
+}
+
+model TaxConfiguration {
+  id                     String     @id @default(cuid())
+  conferenceId           String
+  label                  String
+  rate                   Decimal
+  registrationIdentifier String?
+  inclusive              Boolean    @default(false)
+  jurisdictionNotes      String?
+  active                 Boolean    @default(true)
+  conference             Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+}
+
+model RegistrationWaiver {
+  id             String       @id @default(cuid())
+  registrationId String
+  type           WaiverType
+  reason         String
+  amount         Decimal
+  authorizedById String
+  createdAt      DateTime     @default(now())
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  authorizedBy   User         @relation("WaiverAuthorizer", fields: [authorizedById], references: [id], onDelete: Restrict)
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  registrationId    String
+  userId            String
+  conferenceId      String
+  amount            Decimal
+  currency          String
+  provider          String
+  providerPaymentId String?
+  internalReference String         @unique
+  status            PaymentStatus  @default(PENDING)
+  verificationState String         @default("UNVERIFIED")
+  metadata          String?
+  initiatedAt       DateTime       @default(now())
+  completedAt       DateTime?
+  failedAt          DateTime?
+  registration      Registration   @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  conference        Conference     @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  events            PaymentEvent[]
+  refunds           Refund[]
+
+  @@index([conferenceId, status])
+  @@index([provider, providerPaymentId])
+}
+
+model PaymentEvent {
+  id                String    @id @default(cuid())
+  paymentId         String?
+  provider          String
+  eventId           String
+  eventType         String
+  payload           String?
+  signatureVerified Boolean   @default(false)
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  payment           Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, eventId])
+  @@index([paymentId, createdAt])
+}
+
+model ManualPaymentSubmission {
+  id             String              @id @default(cuid())
+  registrationId String
+  reference      String
+  paymentDate    DateTime?
+  notes          String?
+  proofMediaId   String?
+  status         ManualPaymentStatus @default(SUBMITTED)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  createdAt      DateTime            @default(now())
+  registration   Registration        @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  proofMedia     MediaAsset?         @relation("ManualPaymentProof", fields: [proofMediaId], references: [id], onDelete: SetNull)
+  reviewedBy     User?               @relation("ManualPaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([registrationId, reference])
+}
+
+model Invoice {
+  id             String            @id @default(cuid())
+  invoiceNumber  String            @unique
+  registrationId String
+  userId         String
+  billingName    String
+  billingAddress String?
+  organization   String?
+  taxId          String?
+  subtotal       Decimal
+  discount       Decimal
+  tax            Decimal
+  total          Decimal
+  currency       String
+  status         String            @default("ISSUED")
+  issueDate      DateTime          @default(now())
+  registration   Registration      @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  lines          InvoiceLineItem[]
+  Conference     Conference?       @relation(fields: [conferenceId], references: [id])
+  conferenceId   String?
+
+  @@index([userId, issueDate])
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int     @default(1)
+  unitAmount  Decimal
+  amount      Decimal
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Receipt {
+  id               String       @id @default(cuid())
+  receiptNumber    String       @unique
+  registrationId   String
+  userId           String
+  conferenceId     String
+  amount           Decimal
+  discount         Decimal
+  tax              Decimal
+  total            Decimal
+  currency         String
+  paymentReference String?
+  paymentMethod    String
+  issuedAt         DateTime     @default(now())
+  registration     Registration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  conference       Conference   @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+}
+
+model CancellationRequest {
+  id             String             @id @default(cuid())
+  registrationId String
+  reason         String
+  status         CancellationStatus @default(REQUESTED)
+  requestedAt    DateTime           @default(now())
+  decidedAt      DateTime?
+  decidedById    String?
+  notes          String?
+  registration   Registration       @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  decidedBy      User?              @relation("CancellationDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+}
+
+model Refund {
+  id                String       @id @default(cuid())
+  registrationId    String
+  paymentId         String?
+  amount            Decimal
+  currency          String
+  reason            String
+  status            RefundStatus @default(REQUESTED)
+  providerReference String?
+  requestedById     String
+  approvedById      String?
+  requestedAt       DateTime     @default(now())
+  approvedAt        DateTime?
+  completedAt       DateTime?
+  registration      Registration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  payment           Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  requestedBy       User         @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+  approvedBy        User?        @relation("RefundApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+}
+
+model ProgrammeDay {
+  id           String             @id @default(cuid())
+  conferenceId String
+  date         DateTime
+  title        String
+  description  String?
+  sortOrder    Int                @default(0)
+  conference   Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  sessions     ProgrammeSession[]
+
+  @@unique([conferenceId, date])
+  @@index([conferenceId, sortOrder])
+}
+
+model Room {
+  id             String             @id @default(cuid())
+  conferenceId   String
+  name           String
+  building       String?
+  capacity       Int?
+  floorNotes     String?
+  virtualUrl     String?
+  privateVirtual Boolean            @default(true)
+  conference     Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  sessions       ProgrammeSession[]
+
+  @@unique([conferenceId, name])
+}
+
+model ProgrammeSession {
+  id            String                @id @default(cuid())
+  conferenceId  String
+  dayId         String
+  roomId        String?
+  trackId       String?
+  title         String
+  type          ProgrammeSessionType
+  startsAt      DateTime
+  endsAt        DateTime
+  chairName     String?
+  moderatorName String?
+  description   String?
+  visibility    ProgrammeVisibility   @default(DRAFT)
+  capacity      Int?
+  sortOrder     Int                   @default(0)
+  conference    Conference            @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  day           ProgrammeDay          @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  room          Room?                 @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  track         ConferenceTrack?      @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  assignments   ProgrammeAssignment[]
+  attendance    AttendanceRecord[]
+
+  @@index([conferenceId, startsAt, endsAt])
+  @@index([dayId, sortOrder])
+}
+
+model ProgrammeAssignment {
+  id                   String           @id @default(cuid())
+  sessionId            String
+  submissionId         String?
+  presenterUserId      String?
+  presentationTitle    String
+  sequence             Int              @default(0)
+  presentationStartsAt DateTime?
+  presentationEndsAt   DateTime?
+  posterNumber         String?
+  createdAt            DateTime         @default(now())
+  session              ProgrammeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  submission           Submission?      @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  presenter            User?            @relation(fields: [presenterUserId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, sequence])
+  @@index([submissionId])
+}
+
+model Attendee {
+  id             String             @id @default(cuid())
+  conferenceId   String
+  registrationId String             @unique
+  status         AttendeeStatus     @default(ACTIVE)
+  displayName    String
+  affiliation    String?
+  attendeeType   String
+  presenter      Boolean            @default(false)
+  qrTokenHash    String             @unique
+  createdAt      DateTime           @default(now())
+  conference     Conference         @relation(fields: [conferenceId], references: [id], onDelete: Restrict)
+  registration   Registration       @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  checkIns       CheckIn[]
+  attendance     AttendanceRecord[]
+
+  @@index([conferenceId, status])
+}
+
+model CheckIn {
+  id           String        @id @default(cuid())
+  attendeeId   String
+  recordedById String
+  method       CheckInMethod
+  checkedInAt  DateTime      @default(now())
+  attendee     Attendee      @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+  recordedBy   User          @relation("CheckInRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@unique([attendeeId])
+}
+
+model AttendanceRecord {
+  id           String            @id @default(cuid())
+  attendeeId   String
+  sessionId    String?
+  recordedById String
+  method       CheckInMethod
+  attendedAt   DateTime          @default(now())
+  attendee     Attendee          @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+  session      ProgrammeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  recordedBy   User              @relation("AttendanceRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([attendeeId, attendedAt])
 }

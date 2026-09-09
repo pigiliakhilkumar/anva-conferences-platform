@@ -57,6 +57,18 @@ export async function requireManager() {
   return user;
 }
 
+export async function canManageConference(user: { id: string; role: string }, conferenceId: string) {
+  if (user.role === "ADMINISTRATOR") return true;
+  if (user.role !== "CONFERENCE_MANAGER") return false;
+  return Boolean(await db.conferenceManagerAssignment.findFirst({ where: { conferenceId, userId: user.id, active: true }, select: { id: true } }));
+}
+
+export async function requireConferenceManager(conferenceId: string) {
+  const user = await requireManager();
+  if (!(await canManageConference(user, conferenceId))) redirect("/workspace/manage");
+  return user;
+}
+
 export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }

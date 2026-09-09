@@ -195,6 +195,10 @@ The central public pages provide truthful empty states when no matching conferen
 
 Administrator lifecycle operations prefer state transitions—draft, published, ongoing, completed, archived, and cancelled—over permanent deletion. Sensitive actions require authorization at the mutation boundary, validate input, and emit audit records without password or secret material.
 
+## Phase 3 operations
+
+Phase 3 adds conference-scoped registrations, configurable categories and time-windowed domestic/international pricing, decimal-safe discounts and tax snapshots, waivers, payment/manual-transfer records, receipt and invoice extension points, cancellation/refund records, programme sessions and accepted-submission scheduling, attendee/check-in/attendance foundations, and participant registration dashboards. No real payment gateway or SMTP delivery is active; provider and webhook interfaces are prepared for later production configuration. Conference managers are restricted by explicit `ConferenceManagerAssignment` records while administrators retain global access. Phase 4 can link these records to certificates, proceedings, and production payment providers.
+
 ## Security operations
 
 - Rotate `AUTH_SECRET` deliberately; changing it invalidates protection for existing authentication state and should be paired with session cleanup.
