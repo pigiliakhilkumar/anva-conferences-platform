@@ -851,8 +851,6 @@ model CertificateType {
   active         Boolean       @default(true)
   conference     Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   certificates   Certificate[]
-  Registration   Registration? @relation(fields: [registrationId], references: [id])
-  registrationId String?
 
   @@unique([conferenceId, name])
 }
@@ -868,8 +866,6 @@ model CertificateTemplate {
   footer         String?
   conference     Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   certificates   Certificate[]
-  Registration   Registration? @relation(fields: [registrationId], references: [id])
-  registrationId String?
 }
 
 model Certificate {
@@ -891,8 +887,6 @@ model Certificate {
   user              User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
   type              CertificateType      @relation(fields: [typeId], references: [id], onDelete: Restrict)
   template          CertificateTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  Registration      Registration?        @relation(fields: [registrationId], references: [id])
-  registrationId    String?
 
   @@index([conferenceId, status])
 }
@@ -1023,9 +1017,6 @@ model Registration {
   manualPayments            ManualPaymentSubmission[]
   invoices                  Invoice[]
   receipts                  Receipt[]
-  certificateTypes          CertificateType[]
-  certificateTemplates      CertificateTemplate[]
-  certificates              Certificate[]
   cancellations             CancellationRequest[]
   refunds                   Refund[]
   attendee                  Attendee?
