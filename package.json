@@ -20,7 +20,7 @@
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:validate:mysql": "prisma validate --schema prisma/schema.mysql.prisma",
     "db:generate:mysql": "prisma generate --schema prisma/schema.mysql.prisma",
-    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts"
+    "admin:bootstrap": "node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.12.0",
